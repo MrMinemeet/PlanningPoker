@@ -2,17 +2,17 @@
 // @ts-check
 import { ref } from 'vue';
 import PokerRoom from './components/PokerRoom.vue';
+import UserNameInput from './components/UserNameInput.vue';
 
-const roomId = ref("123123123");
+const roomId = ref("");
 
 </script>
 
 <template>
-  <header>
-    <p>Room ID: {{ roomId }}</p>
-  </header>
+  <p v-if="roomId !== ''">Room ID: {{ roomId }}</p>
   <main>
-    <PokerRoom></PokerRoom>
+    <UserNameInput v-if="roomId === ''" />
+    <PokerRoom v-else></PokerRoom>
   </main>
 </template>
 
