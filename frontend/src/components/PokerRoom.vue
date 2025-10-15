@@ -6,9 +6,6 @@ import PokerUser from './PokerUser.vue';
 
 const users = ref([]);
 
-// TODO: Dummy data for visualization
-
-
 /**
  * Returns style object to position user around the table
  * @param {number} index Index of the user

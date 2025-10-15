@@ -1,5 +1,5 @@
-import http from "node:http";
 import Fastify from "fastify";
+import cors from '@fastify/cors'
 import { Server as SocketIOServer } from "socket.io";
 
 import { Room } from "./room.js";
@@ -44,6 +44,7 @@ main();
 
 async function main() {
 	const fastify = Fastify({ logger: true });
+	await fastify.register(cors, {});
 	const websocket = new SocketIOServer(fastify.server, {
 		cors: {
 			origin: '*',
@@ -67,7 +68,7 @@ async function main() {
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 
-	instance.get("/create-user", async (request, reply) => {
+	instance.get("/api/create-user", async (request, reply) => {
 		if (request.query == null
 			|| typeof (request.query) !== "object"
 			|| !Utils.hasProperty(request.query, "username")
@@ -84,7 +85,7 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 		return { userId: user.id, ttl: Constants.USER_INACTIVITY_TIMEOUT };
 	});
 
-	instance.get("/create-room", async (request, reply) => {
+	instance.get("/api/create-room", async (request, reply) => {
 		if (request.query == null
 			|| typeof (request.query) !== "object"
 			|| !Utils.hasProperty(request.query, "deck")
