@@ -7,6 +7,8 @@ import * as Constants from "./constants.js";
 import * as Utils from "./utils.js";
 import { User } from "./user.js";
 
+const logger = new Utils.Logger("[index.ts]");
+
 const activeRooms: Map<string, Room> = new Map();
 const activeUsers: Map<string, User> = new Map();
 
@@ -14,7 +16,7 @@ setInterval(() => {
 	const now = Date.now();
 	let oldSize: number;
 
-	console.info("Running cleanup of inactive rooms...");
+	logger.info("Running cleanup of inactive rooms...");
 	oldSize = activeRooms.size;
 	for (const [key, room] of activeRooms) {
 		if (now - room.lastActivityTime.getTime() > Constants.ROOM_INACTIVITY_TIMEOUT) {
@@ -22,11 +24,11 @@ setInterval(() => {
 		}
 	}
 	if (oldSize !== activeRooms.size) {
-			const room = Array.from(activeRooms)
-		console.info(`Cleaned up ${oldSize - activeRooms.size} inactive rooms.`);
+		const room = Array.from(activeRooms)
+		logger.info(`Cleaned up ${oldSize - activeRooms.size} inactive rooms.`);
 	}
 
-	console.info("Running cleanup of inactive users...");
+	logger.info("Running cleanup of inactive users...");
 	oldSize = activeUsers.size;
 	for (const [key, user] of activeUsers) {
 		if (now - user.lastActivityTime.getTime() > Constants.USER_INACTIVITY_TIMEOUT) {
@@ -34,7 +36,7 @@ setInterval(() => {
 		}
 	}
 	if (oldSize !== activeUsers.size) {
-		console.info(`Cleaned up ${oldSize - activeUsers.size} inactive users.`);
+		logger.info(`Cleaned up ${oldSize - activeUsers.size} inactive users.`);
 	}
 }, Constants.CLEANUP_INTERVAL);
 
@@ -80,7 +82,7 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 
 		const user = new User(request.query.username as string);
 		activeUsers.set(user.id, user);
-		console.info(`Created new user: ${user.username} (${user.id})`);
+		logger.info(`Created new user: ${user.username} (${user.id})`);
 
 		return { userId: user.id, ttl: Constants.USER_INACTIVITY_TIMEOUT };
 	});
@@ -100,7 +102,7 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 
 		const room = new Room(request.query.deck as Constants.DeckType);
 		activeRooms.set(room.id, room);
-		console.info(`Created new room: ${room.id} (Deck: ${request.query.deck})`);
+		logger.info(`Created new room: ${room.id} (Deck: ${request.query.deck})`);
 
 		return { roomId: room.id };
 	});
@@ -109,7 +111,7 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 // Websocket handling
 function registerWebsocketHandlers(websocket: SocketIOServer) {
 	websocket.on("connection", (socket) => {
-		console.info(`New client websocket connection: ${socket.id}`);
+		logger.info(`New client websocket connection: ${socket.id}`);
 
 		socket.on("joinRoom", (data) => {
 			if (typeof(data) === "string") {
@@ -120,19 +122,19 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			const user = activeUsers.get(userId);
 
 			if (room == null || user == null) {
-				console.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
+				logger.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
 				return;
 			}
 			
 			user.socketId = socket.id;
 			room.addUser(user);
-			console.info(`User ${user.username} (${user.id}) joined room ${room.id}`);
+			logger.info(`User ${user.username} (${user.id}) joined room ${room.id}`);
 
 			socket.join(roomId);
 		});
 
 		socket.on("disconnect", () => {
-			console.info(`Websocket disconnected: ${socket.id}`);
+			logger.info(`Websocket disconnected: ${socket.id}`);
 
 			// Remove users associated with this socket
 			activeUsers.values()
