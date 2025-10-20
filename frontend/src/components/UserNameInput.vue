@@ -1,5 +1,4 @@
-<script setup>
-// @ts-check
+<script lang="ts" setup>
 import { ref, computed, watch } from "vue";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants";
