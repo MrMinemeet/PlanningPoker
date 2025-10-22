@@ -1,9 +1,22 @@
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed } from 'vue';
 import PokerTable from './PokerTable.vue';
 import PokerUser from './PokerUser.vue';
+import { RoomState } from '@/App.vue';
 
-const users = ref([]);
+const props = defineProps({
+	roomState: {
+		type: Object as () => RoomState | null,
+		required: false
+	}
+});
+
+const hasAnyUsers = computed(() => {
+	return props.roomState?.users.length > 0;
+});
+const hasAnyVotes = computed(() => {
+	return props.roomState?.users.some(user => user.voted) ?? false;
+});
 
 /**
  * Returns style object to position user around the table
@@ -28,23 +41,22 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 <template>
 	<div class="poker-table-container">
 		<PokerTable 
-			:any-user-present="users.length > 0"
-			:any-vote-present="[...users].some(user => user.voted)"
-		/>
-		<PokerUser v-for="(user, i) in users" :key="i" :username="user.username" :voted="user.voted"
-			:style="getPositionStyle(i, users.length)" />
+			:any-user-present="hasAnyUsers"
+			:any-vote-present="hasAnyVotes" />
+		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted"
+			:style="getPositionStyle(i, roomState.users.length)" />
 	</div>
 </template>
 
 <style scoped>
 .poker-table-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 600px;
-    height: 600px;
-    margin: 0 auto;
-    position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 600px;
+	height: 600px;
+	margin: 0 auto;
+	position: relative;
 }
 
 .players {

@@ -10,7 +10,16 @@ import RoomChooser from './components/RoomChooser.vue';
 
 const roomId = ref<string | undefined>(undefined);
 
-let socket: Socket | undefined = undefined;
+export type UserState = {
+  username: string;
+  voted: boolean;
+}
+export type RoomState = {
+  users: Array<UserState>;
+  votesRevealed: boolean;
+  deck: string;
+}
+const roomState = ref<RoomState | null>(null);
 
 type User = {
   name: string;
@@ -36,6 +45,7 @@ function setRoom(id: string) {
   window.history.replaceState({}, '', url.toString());
 }
 
+let socket: Socket | undefined = undefined;
 watch(roomId, (newRoomId) => {
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
@@ -55,11 +65,12 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
-  socket.on("roomState", (state) => {
+  socket.on("roomState", (state: RoomState) => {
     console.debug("Received room state:", state);
+    roomState.value = state;
   });
 
-  socket.on("disconnect", (reason) => {
+  socket.on("disconnect", (reason: unknown) => {
     console.warn(`Disconnected from server: ${reason}`);
   });
 })
@@ -71,7 +82,7 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
-    <PokerRoom v-else></PokerRoom>
+    <PokerRoom v-else :room-state="roomState" />
   </main>
 </template>
 
