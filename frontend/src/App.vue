@@ -1,12 +1,16 @@
 <script lang="ts" setup>
 import { ref, watch } from 'vue';
 import Cookies from 'js-cookie';
+import { io, Socket } from 'socket.io-client';
 
+import * as constants from './constants';
 import PokerRoom from './components/PokerRoom.vue';
 import UserNameInput from './components/UserNameInput.vue';
 import RoomChooser from './components/RoomChooser.vue';
 
-const roomId = ref<string | undefined>(new URL(window.location.href).searchParams.get('room') || undefined);
+const roomId = ref<string | undefined>(undefined);
+
+let socket: Socket | undefined = undefined;
 
 type User = {
   name: string;
@@ -33,13 +37,37 @@ function setRoom(id: string) {
 }
 
 watch(roomId, (newRoomId) => {
+  if (newRoomId == null || newRoomId.trim() === "") {
+    return;
+  }
 
-  // TODO: Join room via websocket
+  if (socket) {
+    console.log("Disconnecting existing socket");
+    socket.disconnect();
+  }
+  socket = io(`${constants.BASE_URL}`, {
+    transports: ["websocket"],
+    withCredentials: true
+  });
+
+  socket.on("connect", () => {
+    console.log(`Connected to server with socket ID: ${socket?.id}`);
+    socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
+  });
+
+  socket.on("roomState", (state) => {
+    console.debug("Received room state:", state);
+  });
+
+  socket.on("disconnect", (reason) => {
+    console.warn(`Disconnected from server: ${reason}`);
+  });
 })
+
+roomId.value = new URL(window.location.href).searchParams.get('room') || undefined;
 </script>
 
 <template>
-  <p v-if="roomId !== ''">Room ID: {{ roomId }}</p>
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />

@@ -50,7 +50,8 @@ async function main() {
 	const websocket = new SocketIOServer(fastify.server, {
 		cors: {
 			origin: '*',
-			methods: ["GET", "POST"]
+			methods: ["GET", "POST"],
+			credentials: true
 		}
 	});
 
@@ -69,12 +70,11 @@ async function main() {
 
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
-
 	instance.get("/api/create-user", async (request, reply) => {
 		if (request.query == null
 			|| typeof (request.query) !== "object"
 			|| !Utils.hasProperty(request.query, "username")
-			|| typeof(request.query.username) !== "string"
+			|| typeof (request.query.username) !== "string"
 		) {
 			reply.status(400);
 			return { error: "Missing 'username' query parameter" };
@@ -94,7 +94,7 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 			|| !Constants.Decks.includes(request.query.deck as Constants.DeckType)
 		) {
 			reply.status(400);
-			return { 
+			return {
 				error: "Missing 'deck' query parameter",
 				validDecks: Constants.Decks
 			};
@@ -114,8 +114,13 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 		logger.info(`New client websocket connection: ${socket.id}`);
 
 		socket.on("joinRoom", (data) => {
-			if (typeof(data) === "string") {
-				data = JSON.parse(data);
+			if (typeof (data) === "string") {
+				try {
+					data = JSON.parse(data);
+				} catch (e) {
+					logger.error(`Invalid JSON in joinRoom: ${data}`);
+					return;
+				}
 			}
 			const { roomId, userId } = data;
 			const room = activeRooms.get(roomId);
@@ -125,12 +130,15 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 				logger.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
 				return;
 			}
-			
+
 			user.socketId = socket.id;
 			room.addUser(user);
 			logger.info(`User ${user.username} (${user.id}) joined room ${room.id}`);
 
 			socket.join(roomId);
+
+			logger.info("Emitting room state to room:", roomId);
+			websocket.to(roomId).emit("roomState", room.getState());
 		});
 
 		socket.on("disconnect", () => {
@@ -140,7 +148,6 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			activeUsers.values()
 				.filter(user => user.socketId === socket.id)
 				.forEach(user => {
-					user.socketId
 					activeRooms.forEach(room => room.removeUser(user));
 				});
 		});

@@ -2,10 +2,24 @@ import { randomBytes } from "node:crypto";
 import { User } from "./user.js";
 import * as constants from "./constants.js";
 
+type RoomState = {
+	users: Array<{
+		username: string; 
+		voted: boolean;
+	}>;
+	votesRevealed: boolean;
+	deck: string;
+}
+
+type UserState = {
+	voted: boolean;
+	votedValue?: string;
+}
+
 export class Room {
 	private readonly creationTime: Date;
 	private _lastActivityTime: Date;
-	private readonly users: Set<User>;
+	private readonly users: Map<User, UserState>;
 
 	public readonly id: string;
 
@@ -13,7 +27,7 @@ export class Room {
 		this.id = randomBytes(constants.ID_ENTROPY_BYTES).toString(constants.ID_ENCODING);
 		this.creationTime = new Date();
 		this._lastActivityTime = this.creationTime
-		this.users = new Set();
+		this.users = new Map();
 
 		console.info(`Room created with ID: ${this.id}`);
 	}
@@ -23,7 +37,7 @@ export class Room {
 	}
 
 	public addUser(user: User) {
-		this.users.add(user);
+		this.users.set(user, {voted: false});
 		this._lastActivityTime = new Date();
 		console.debug(`User ${user.username} (${user.id}) added to room ${this.id}`);
 	}
@@ -32,6 +46,18 @@ export class Room {
 		if (this.users.delete(user)) {
 			this._lastActivityTime = new Date();
 			console.debug(`User ${user.username} (${user.id}) removed from room ${this.id}`);
+		}
+	}
+
+	public getState(): RoomState {
+		return {
+			users: Array.from(this.users)
+				.map(([user, userState]) => ({
+					username: user.username,
+					voted: userState.voted
+				})),
+			votesRevealed: false,
+			deck: this.deckType
 		}
 	}
 }
