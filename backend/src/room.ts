@@ -1,6 +1,9 @@
 import { randomBytes } from "node:crypto";
 import { User } from "./user.js";
 import * as constants from "./constants.js";
+import { Logger } from "./utils.js";
+
+const logger = new Logger("room.ts");
 
 type RoomState = {
 	users: Array<{
@@ -34,6 +37,17 @@ export class Room {
 
 	public get lastActivityTime() {
 		return this._lastActivityTime;
+	}
+
+	public castVote(userId: string, vote: string) {
+		const entry = Array.from(this.users)
+			.find(([user, state]) => user.id === userId);
+		if (entry == null) {
+			logger.warn(`User with ID '${userId}' not found in room '${this.id}'!`);
+			return;
+		}
+		entry[1].voted = true;
+		entry[1].votedValue = vote;
 	}
 
 	public addUser(user: User) {

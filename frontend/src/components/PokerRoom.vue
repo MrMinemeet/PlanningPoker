@@ -5,6 +5,8 @@ import PokerUser from './PokerUser.vue';
 import { RoomState } from '@/App.vue';
 import FibonacciVoting from './FibonacciVoting.vue';
 
+const emit = defineEmits(["cast-vote"]);
+
 const props = defineProps({
 	roomState: {
 		type: Object as () => RoomState | null,
@@ -20,7 +22,7 @@ const hasAnyVotes = computed(() => {
 });
 
 function castVote(value: string) {
-	console.log("Vote cast:", value);
+	emit("cast-vote", value);
 }
 
 /**

@@ -46,6 +46,16 @@ function setRoom(id: string) {
 }
 
 let socket: Socket | undefined = undefined;
+
+function castVote(value: string) {
+  if (socket != null && roomId.value !== "") {
+    console.log(`Casting vote "${value}" in room "${roomId.value}"`);
+    socket.emit("sendVote", { roomId: roomId.value, userId: user.value?.sessionId, vote: value });
+  } else {
+    console.warn("Cannot cast vote: socket or roomId is undefined");
+  }
+}
+
 watch(roomId, (newRoomId) => {
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
@@ -82,7 +92,7 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
-    <PokerRoom v-else :room-state="roomState" />
+    <PokerRoom v-else @cast-vote="castVote" :room-state="roomState" />
   </main>
 </template>
 

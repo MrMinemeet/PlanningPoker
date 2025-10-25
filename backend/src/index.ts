@@ -67,6 +67,17 @@ async function main() {
 	}
 }
 
+function emitRoomState(socket: SocketIOServer, roomId: string) {
+	const room = activeRooms.get(roomId)
+	if (room == null) {
+		logger.warn(`Cannot emit room state for non-existing ${roomId}`);
+		return;
+	}
+
+	logger.info("Emitting room state:", roomId);
+	socket.to(roomId).emit("roomState", room.getState());
+}
+
 
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
@@ -108,10 +119,22 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 	});
 }
 
+type SendVoteData = {
+	roomId: string;
+	userId: string;
+	vote: string;
+}
+
 // Websocket handling
 function registerWebsocketHandlers(websocket: SocketIOServer) {
 	websocket.on("connection", (socket) => {
 		logger.info(`New client websocket connection: ${socket.id}`);
+
+		socket.on("sendVote", (data: SendVoteData) => {
+			logger.info(`Received vote from '${data.userId}`);
+			activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
+			emitRoomState(websocket, data.roomId);
+		});
 
 		socket.on("joinRoom", (data) => {
 			if (typeof (data) === "string") {
@@ -137,8 +160,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 			socket.join(roomId);
 
-			logger.info("Emitting room state to room:", roomId);
-			websocket.to(roomId).emit("roomState", room.getState());
+			emitRoomState(websocket, roomId);
 		});
 
 		socket.on("disconnect", () => {
