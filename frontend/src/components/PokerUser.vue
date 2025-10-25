@@ -1,5 +1,4 @@
-<script setup>
-// @ts-check
+<script lang="ts" setup>
 const props = defineProps({
 	username: {
 		type: String,

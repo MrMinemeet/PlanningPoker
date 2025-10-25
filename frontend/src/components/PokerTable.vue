@@ -1,6 +1,4 @@
-<script setup>
-// @ts-check
-
+<script lang="ts" setup>
 const props = defineProps({
   anyUserPresent: {
     type: Boolean,
