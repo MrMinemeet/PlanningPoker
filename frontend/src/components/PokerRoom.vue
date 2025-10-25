@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import PokerTable from './PokerTable.vue';
 import PokerUser from './PokerUser.vue';
 import { RoomState } from '@/App.vue';
+import FibonacciVoting from './FibonacciVoting.vue';
 
 const props = defineProps({
 	roomState: {
@@ -17,6 +18,10 @@ const hasAnyUsers = computed(() => {
 const hasAnyVotes = computed(() => {
 	return props.roomState?.users.some(user => user.voted) ?? false;
 });
+
+function castVote(value: string) {
+	console.log("Vote cast:", value);
+}
 
 /**
  * Returns style object to position user around the table
@@ -40,12 +45,11 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 
 <template>
 	<div class="poker-table-container">
-		<PokerTable 
-			:any-user-present="hasAnyUsers"
-			:any-vote-present="hasAnyVotes" />
+		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" />
 		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted"
 			:style="getPositionStyle(i, roomState?.users.length ?? 0)" />
 	</div>
+	<FibonacciVoting @cast-vote="castVote" />
 </template>
 
 <style scoped>
