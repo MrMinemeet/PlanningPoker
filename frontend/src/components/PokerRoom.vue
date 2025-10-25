@@ -44,7 +44,7 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 			:any-user-present="hasAnyUsers"
 			:any-vote-present="hasAnyVotes" />
 		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted"
-			:style="getPositionStyle(i, roomState.users.length)" />
+			:style="getPositionStyle(i, roomState?.users.length ?? 0)" />
 	</div>
 </template>
 
