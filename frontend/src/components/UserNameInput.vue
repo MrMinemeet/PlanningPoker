@@ -55,6 +55,11 @@ function submitUsername() {
 			ttl: response.data.ttl
 		});
 	}).catch(error => {
+		if (error.code === "ERR_NETWORK") {
+			console.error("Network error:", error);
+			alert("Failed to connect to the server");
+			return;
+		}
 		console.error("Error setting username:", error);
 		alert("An error occurred while setting the username.");
 	});

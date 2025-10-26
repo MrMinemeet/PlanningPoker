@@ -36,6 +36,11 @@ function createRoom() {
 	}).then(response => {
 		emit("set-room", response.data.roomId);
 	}).catch(error => {
+		if (error.code === "ERR_NETWORK") {
+			console.error("Network error:", error);
+			alert("Failed to connect to the server");
+			return;
+		}
 		console.error("Error creating a new room:", error);
 		alert("An error occurred while creating a new room.");
 	});
