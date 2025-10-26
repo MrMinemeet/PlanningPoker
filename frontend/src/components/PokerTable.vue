@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { ref } from "vue";
+
 const props = defineProps({
   anyUserPresent: {
     type: Boolean,
@@ -9,13 +11,29 @@ const props = defineProps({
     required: true
   }
 });
+const emit = defineEmits(["reveal-cards", "reset-voting"]);
 
+const votesRevealed = ref<boolean>(false);
+
+function revealCards() {
+  emit("reveal-cards");
+  votesRevealed.value = true;
+  
+}
+function resetVoting() {
+  // TODO: Implement reset voting functionality
+  //emit("reset-voting");
+  votesRevealed.value = false;
+}
 </script>
 
 <template>
   <div class="poker-table">
-    <button v-if="anyVotePresent" class="reveal-cards-button">
+    <button v-if="anyVotePresent && !votesRevealed" @click="revealCards" class="reveal-cards-button">
       Reveal Cards
+    </button>
+    <button v-else-if="votesRevealed" @click="resetVoting" class="reset-voting-button">
+      Reset Voting
     </button>
     <p v-else>
       <p v-if="anyUserPresent" class="info-text">
@@ -44,5 +62,4 @@ const props = defineProps({
   color: white;
   font-weight: bold;
 }
-
 </style>

@@ -19,6 +19,11 @@ type UserState = {
 	votedValue?: string;
 }
 
+type VotingResult = {
+	userId: string;
+	vote: string;
+}
+
 export class Room {
 	private readonly creationTime: Date;
 	private _lastActivityTime: Date;
@@ -56,6 +61,16 @@ export class Room {
 		console.debug(`User ${user.username} (${user.id}) added to room ${this.id}`);
 	}
 
+	public getVotingResults(): VotingResult[] {
+		const results: VotingResult[] = [];
+		for (const [user, state] of this.users) {
+			if (state.voted && state.votedValue != null) {
+				results.push({ userId: user.id, vote: state.votedValue });
+			}
+		}
+		return results;
+	}
+
 	public removeUser(user: User) {
 		if (this.users.delete(user)) {
 			this._lastActivityTime = new Date();
@@ -67,6 +82,7 @@ export class Room {
 		return {
 			users: Array.from(this.users)
 				.map(([user, userState]) => ({
+					id: user.id,
 					username: user.username,
 					voted: userState.voted
 				})),

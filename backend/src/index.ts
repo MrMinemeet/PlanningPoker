@@ -78,6 +78,17 @@ function emitRoomState(socket: SocketIOServer, roomId: string) {
 	socket.to(roomId).emit("roomState", room.getState());
 }
 
+function emitVotes(socket: SocketIOServer, roomId: string) {
+	const room = activeRooms.get(roomId)
+	if (room == null) {
+		logger.warn(`Cannot emit votes for non-existing ${roomId}`);
+		return;
+	}
+
+	logger.info("Emitting votes for:", roomId);
+	socket.to(roomId).emit("votesRevealed", room.getVotingResults());
+}
+
 
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
@@ -134,6 +145,11 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			logger.info(`Received vote from '${data.userId}`);
 			activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
 			emitRoomState(websocket, data.roomId);
+		});
+
+		socket.on("revealVotes", (data: { roomId: string }) => {
+			logger.info("Received request to reveal votes");
+			emitVotes(websocket, data.roomId);
 		});
 
 		socket.on("joinRoom", (data) => {

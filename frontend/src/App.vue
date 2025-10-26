@@ -11,8 +11,10 @@ import RoomChooser from './components/RoomChooser.vue';
 const roomId = ref<string | undefined>(undefined);
 
 export type UserState = {
+  id: string;
   username: string;
   voted: boolean;
+  vote: string | null;
 }
 export type RoomState = {
   users: Array<UserState>;
@@ -41,7 +43,7 @@ function setRoom(id: string) {
   roomId.value = id;
 
   const url = new URL(window.location.href);
-  url.searchParams.set('room', id);
+  url.searchParams.set('a', id);
   window.history.replaceState({}, '', url.toString());
 }
 
@@ -56,7 +58,16 @@ function castVote(value: string) {
   }
 }
 
+function revealCards() {
+  if (socket == null || roomId.value === "") {
+    return;
+  }
+  console.log(`Revealing votes in room "${roomId.value}"`);
+  socket.emit("revealVotes", { roomId: roomId.value });
+}
+
 watch(roomId, (newRoomId) => {
+
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
   }
@@ -80,6 +91,20 @@ watch(roomId, (newRoomId) => {
     roomState.value = state;
   });
 
+  socket.on("votesRevealed", (results: Array<{ userId: string; vote: string }>) => {
+    console.info("Votes have been revealed:", results);
+    if (roomState.value == null) {
+      console.error("Cannot reveal votes: roomState is null");
+      return;
+    }
+
+    const voteMap = new Map<string, string>(results.map(r => [r.userId, r.vote]));
+    roomState.value.users = roomState.value.users.map(user =>
+      ({ ...user, vote: voteMap.get(user.id) || null })
+    );
+    roomState.value.votesRevealed = true;
+  });
+
   socket.on("disconnect", (reason: unknown) => {
     console.warn(`Disconnected from server: ${reason}`);
   });
@@ -92,7 +117,7 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
-    <PokerRoom v-else @cast-vote="castVote" :room-state="roomState" />
+    <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" :room-state="roomState" />
   </main>
 </template>
 
