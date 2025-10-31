@@ -55,7 +55,7 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 
 <template>
 	<div class="poker-table-container">
-		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" :votes-revealed="roomState?.votesRevealed" @reveal-cards="revealCards" @reset-voting="resetVoting" />
+		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" :votes-revealed="roomState?.votesRevealed ?? false" @reveal-cards="revealCards" @reset-voting="resetVoting" />
 		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted" :vote="user.vote"
 			:style="getPositionStyle(i, roomState?.users.length ?? 0)" />
 	</div>
