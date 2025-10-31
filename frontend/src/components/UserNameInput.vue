@@ -14,7 +14,7 @@ const username = ref("")
 // Check local storage for existing username -> if found, request user creation directly
 const storedUsername = localStorage.getItem('username');
 if (storedUsername) {
-	console.info("Found stored username, using it:", storedUsername);
+	console.info(`Hi ${storedUsername}, found existing username in local storage, submitting automatically.`);
 	username.value = storedUsername;
 	submitUsername();
 }

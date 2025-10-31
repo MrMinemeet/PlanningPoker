@@ -61,7 +61,7 @@ watch(roomId, (newRoomId) => {
   });
 
   socket.on("connect", () => {
-    console.log(`Connected to server with socket ID: ${socket?.id}`);
+    console.debug(`Connected to server with socket ID: ${socket?.id}`);
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
@@ -71,7 +71,7 @@ watch(roomId, (newRoomId) => {
   });
 
   socket.on("disconnect", (reason: unknown) => {
-    console.warn(`Disconnected from server: ${reason}`);
+    console.info(`Disconnected from server: ${reason}`);
   });
 })
 
