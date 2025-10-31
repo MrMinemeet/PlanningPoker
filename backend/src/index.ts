@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from '@fastify/cors'
-import { Server as SocketIOServer } from "socket.io";
+import { Socket, Server as SocketIOServer } from "socket.io";
 
 import { Room } from "./room.js";
 import * as Constants from "./constants.js";
@@ -143,7 +143,12 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 		socket.on("sendVote", (data: SendVoteData) => {
 			logger.info(`Received vote from '${data.userId}`);
-			activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
+			try {
+				activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
+			} catch (e) {
+				logger.warn("Error casting vote:", e);
+				emitError(socket, (e as Error).message);
+			}
 			emitRoomState(websocket, data.roomId);
 		});
 
@@ -156,8 +161,9 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			if (typeof (data) === "string") {
 				try {
 					data = JSON.parse(data);
-				} catch (e) {
-					logger.error(`Invalid JSON in joinRoom: ${data}`);
+				} catch (e: unknown) {
+					logger.warn("Invalid JSON in joinRoom:", e);
+					emitError(socket, "Invalid JSON format");
 					return;
 				}
 			}
@@ -167,6 +173,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 			if (room == null || user == null) {
 				logger.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
+				emitError(socket, "Invalid room ID or user ID");
 				return;
 			}
 
@@ -190,4 +197,9 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 				});
 		});
 	});
+}
+
+function emitError(socket: Socket, message: string) {
+	logger.info("Emitting error:", message);
+	socket.emit("error", { message });
 }

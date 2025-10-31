@@ -25,8 +25,9 @@ type VotingResult = {
 }
 
 export class Room {
-	private readonly creationTime: Date;
 	private _lastActivityTime: Date;
+	private _votesRevealed: boolean = false;
+	private readonly creationTime: Date;
 	private readonly users: Map<User, UserState>;
 
 	public readonly id: string;
@@ -44,12 +45,26 @@ export class Room {
 		return this._lastActivityTime;
 	}
 
+	public get votesRevealed() {
+		return this._votesRevealed;
+	}
+
+	public set votesRevealed(value: boolean) {
+		this._votesRevealed = value;
+		this._lastActivityTime = new Date();
+	}
+
 	public castVote(userId: string, vote: string) {
+		if (this._votesRevealed) {
+			logger.warn(`Cannot cast vote in room '${this.id}' because votes are already revealed!`);
+			throw new Error("Votes are already revealed");
+		}
+
 		const entry = Array.from(this.users)
 			.find(([user, state]) => user.id === userId);
 		if (entry == null) {
 			logger.warn(`User with ID '${userId}' not found in room '${this.id}'!`);
-			return;
+			throw new Error("User not found in room");
 		}
 		entry[1].voted = true;
 		entry[1].votedValue = vote;
@@ -62,6 +77,7 @@ export class Room {
 	}
 
 	public getVotingResults(): VotingResult[] {
+		this._lastActivityTime = new Date();
 		const results: VotingResult[] = [];
 		for (const [user, state] of this.users) {
 			if (state.voted && state.votedValue != null) {
@@ -79,6 +95,7 @@ export class Room {
 	}
 
 	public getState(): RoomState {
+		this._lastActivityTime = new Date();
 		return {
 			users: Array.from(this.users)
 				.map(([user, userState]) => ({
@@ -86,7 +103,7 @@ export class Room {
 					username: user.username,
 					voted: userState.voted
 				})),
-			votesRevealed: false,
+			votesRevealed: this.votesRevealed,
 			deck: this.deckType
 		}
 	}

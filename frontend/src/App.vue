@@ -43,7 +43,7 @@ function setRoom(id: string) {
   roomId.value = id;
 
   const url = new URL(window.location.href);
-  url.searchParams.set('a', id);
+  url.searchParams.set('room', id);
   window.history.replaceState({}, '', url.toString());
 }
 

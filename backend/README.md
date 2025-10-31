@@ -36,3 +36,6 @@ These WebSocket events are available.
   - Data: `{ votes: Array<{ userName: string, vote: string | null }> }`
 * `votesReset` - Notifies that all votes have been reset
   - Data: `{}`
+* `error` - Sends an error message
+  - Data: `{ message: string }`
+  - This event is sent when an error occurs, such as trying to join a non-existent room.
