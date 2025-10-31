@@ -55,7 +55,7 @@ export class Room {
 	}
 
 	public castVote(userId: string, vote: string) {
-		if (this._votesRevealed) {
+		if (this.votesRevealed) {
 			logger.warn(`Cannot cast vote in room '${this.id}' because votes are already revealed!`);
 			throw new Error("Votes are already revealed");
 		}
@@ -77,6 +77,7 @@ export class Room {
 	}
 
 	public getVotingResults(): VotingResult[] {
+		this.votesRevealed = true;
 		this._lastActivityTime = new Date();
 		const results: VotingResult[] = [];
 		for (const [user, state] of this.users) {

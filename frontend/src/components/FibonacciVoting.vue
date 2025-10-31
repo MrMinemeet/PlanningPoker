@@ -1,6 +1,13 @@
 <script lang="ts" setup>
 import { ref } from "vue";
 
+const props = defineProps({
+	enabled: {
+		type: Boolean,
+		required: true
+	}
+});
+
 const emit = defineEmits(["cast-vote"]);
 
 const FIBONACCI_VALUES = ["0", "1", "2", "3", "5", "8", "13", "☕", "?"] as const
@@ -9,6 +16,10 @@ type FibonacciEntry = typeof FIBONACCI_VALUES[number];
 const currentVote = ref<FibonacciEntry | null>(null);
 
 function vote(value: FibonacciEntry) {
+	if (!props.enabled) {
+		// Votes have been revealed -> No further voting allowed
+		return;
+	}
 	if (currentVote.value === value) {
 		// Same vote, do nothing
 		return;
@@ -19,9 +30,11 @@ function vote(value: FibonacciEntry) {
 </script>
 
 <template>
-	<div class="voting-bar">
+	<div class="voting-bar" :class="{ 'disabled': !props.enabled }">
 		<button v-for="value in FIBONACCI_VALUES" :key="value" class="voting-button"
-			:class="{ 'selected': currentVote === value }" @click="vote(value)">
+			:class="{ 'selected': currentVote === value, 'locked': !props.enabled }" 
+			:disabled="!props.enabled"
+			@click="vote(value)">
 			{{ value }}
 		</button>
 	</div>
@@ -62,5 +75,21 @@ function vote(value: FibonacciEntry) {
 	color: #333;
 	transform: translateY(-2px);
 	box-shadow: 0 4px 12px rgba(255, 204, 0, 0.3);
+}
+
+.voting-button:disabled,
+.voting-button.locked {
+	cursor: not-allowed;
+	opacity: 0.6;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.voting-button.locked:hover {
+	transform: none;
+	box-shadow: none;
+}
+
+.voting-bar.disabled {
+	opacity: 0.7;
 }
 </style>

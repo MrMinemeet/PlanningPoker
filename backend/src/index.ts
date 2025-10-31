@@ -145,11 +145,11 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			logger.info(`Received vote from '${data.userId}`);
 			try {
 				activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
+				emitRoomState(websocket, data.roomId);
 			} catch (e) {
-				logger.warn("Error casting vote:", e);
+				logger.warn("Error casting vote:", (e as Error).message);
 				emitError(socket, (e as Error).message);
 			}
-			emitRoomState(websocket, data.roomId);
 		});
 
 		socket.on("revealVotes", (data: { roomId: string }) => {

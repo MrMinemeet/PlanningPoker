@@ -9,21 +9,21 @@ const props = defineProps({
   anyVotePresent: {
     type: Boolean,
     required: true
+  },
+  votesRevealed: {
+    type: Boolean,
+    required: true
   }
 });
 const emit = defineEmits(["reveal-cards", "reset-voting"]);
 
-const votesRevealed = ref<boolean>(false);
-
 function revealCards() {
   emit("reveal-cards");
-  votesRevealed.value = true;
   
 }
 function resetVoting() {
   // TODO: Implement reset voting functionality
   //emit("reset-voting");
-  votesRevealed.value = false;
 }
 </script>
 
