@@ -21,6 +21,10 @@ export class User {
 		return this._lastActivityTime;
 	}
 
+	public updateActivity() {
+		this._lastActivityTime = new Date();
+	}
+
 	public set socketId(newSocketId: string | undefined) {
 		if (newSocketId?.trim().length === 0) {
 			console.warn("Attempted to set empty socket ID");

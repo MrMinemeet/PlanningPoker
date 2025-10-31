@@ -51,7 +51,7 @@ let socket: Socket | undefined = undefined;
 
 function castVote(value: string) {
   if (socket != null && roomId.value !== "") {
-    console.log(`Casting vote "${value}" in room "${roomId.value}"`);
+    console.debug(`Casting vote "${value}" in room "${roomId.value}"`);
     socket.emit("sendVote", { roomId: roomId.value, userId: user.value?.sessionId, vote: value });
   } else {
     console.warn("Cannot cast vote: socket or roomId is undefined");
@@ -62,8 +62,16 @@ function revealCards() {
   if (socket == null || roomId.value === "") {
     return;
   }
-  console.log(`Revealing votes in room "${roomId.value}"`);
+  console.debug(`Revealing votes in room "${roomId.value}"`);
   socket.emit("revealVotes", { roomId: roomId.value });
+}
+
+function resetVoting() {
+  if (socket == null || roomId.value === "" || !roomState.value.votesRevealed) {
+    return;
+  }
+  console.debug(`Resetting votes in room "${roomId.value}"`);
+  socket.emit("resetVotes", { roomId: roomId.value });
 }
 
 watch(roomId, (newRoomId) => {
@@ -86,7 +94,7 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
-  socket.on("error", (errorMessage: {message: string}) => {
+  socket.on("error", (errorMessage: { message: string }) => {
     console.error("Error from server:", errorMessage.message);
   });
 
@@ -121,7 +129,8 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
-    <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" :room-state="roomState" />
+    <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" @reset-voting="resetVoting"
+      :room-state="roomState" />
   </main>
 </template>
 

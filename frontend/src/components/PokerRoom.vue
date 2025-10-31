@@ -5,7 +5,7 @@ import PokerUser from './PokerUser.vue';
 import { RoomState } from '@/App.vue';
 import FibonacciVoting from './FibonacciVoting.vue';
 
-const emit = defineEmits(["cast-vote", "reveal-cards"]);
+const emit = defineEmits(["cast-vote", "reveal-cards", "reset-voting"]);
 
 const props = defineProps({
 	roomState: {
@@ -27,6 +27,10 @@ function castVote(value: string) {
 
 function revealCards() {
 	emit("reveal-cards");
+}
+
+function resetVoting() {
+	emit("reset-voting");
 }
 
 /**
@@ -51,7 +55,7 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 
 <template>
 	<div class="poker-table-container">
-		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" :votes-revealed="roomState?.votesRevealed" @reveal-cards="revealCards" />
+		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" :votes-revealed="roomState?.votesRevealed" @reveal-cards="revealCards" @reset-voting="resetVoting" />
 		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted" :vote="user.vote"
 			:style="getPositionStyle(i, roomState?.users.length ?? 0)" />
 	</div>

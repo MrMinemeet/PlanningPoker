@@ -152,6 +152,17 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			}
 		});
 
+		socket.on("resetVotes", (data: { roomId: string }) => {
+			logger.info("Received request to reset votes");
+			try {
+				activeRooms.get(data.roomId)?.resetVotes();
+				emitRoomState(websocket, data.roomId);
+			} catch (e) {
+				logger.warn("Error resetting votes:", (e as Error).message);
+				emitError(socket, (e as Error).message);
+			}
+		});
+
 		socket.on("revealVotes", (data: { roomId: string }) => {
 			logger.info("Received request to reveal votes");
 			emitVotes(websocket, data.roomId);

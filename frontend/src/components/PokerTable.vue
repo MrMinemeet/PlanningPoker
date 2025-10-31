@@ -22,8 +22,7 @@ function revealCards() {
   
 }
 function resetVoting() {
-  // TODO: Implement reset voting functionality
-  //emit("reset-voting");
+  emit("reset-voting");
 }
 </script>
 

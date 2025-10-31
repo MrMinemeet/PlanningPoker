@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 
 const props = defineProps({
 	enabled: {
@@ -14,6 +14,13 @@ const FIBONACCI_VALUES = ["0", "1", "2", "3", "5", "8", "13", "☕", "?"] as con
 type FibonacciEntry = typeof FIBONACCI_VALUES[number];
 
 const currentVote = ref<FibonacciEntry | null>(null);
+
+watch(() => props.enabled, (newEnabled) => {
+	if (newEnabled) {
+		// Reset vote when voting is re-enabled
+		currentVote.value = null;
+	}
+});
 
 function vote(value: FibonacciEntry) {
 	if (!props.enabled) {

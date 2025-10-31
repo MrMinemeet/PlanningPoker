@@ -16,7 +16,7 @@ type RoomState = {
 
 type UserState = {
 	voted: boolean;
-	votedValue?: string;
+	votedValue: string | undefined;
 }
 
 type VotingResult = {
@@ -71,7 +71,7 @@ export class Room {
 	}
 
 	public addUser(user: User) {
-		this.users.set(user, {voted: false});
+		this.users.set(user, { voted: false, votedValue: undefined });
 		this._lastActivityTime = new Date();
 		console.debug(`User ${user.username} (${user.id}) added to room ${this.id}`);
 	}
@@ -93,6 +93,16 @@ export class Room {
 			this._lastActivityTime = new Date();
 			console.debug(`User ${user.username} (${user.id}) removed from room ${this.id}`);
 		}
+	}
+
+	public resetVotes() {
+		this._lastActivityTime = new Date();
+		Array.from(this.users).forEach(([user, state]) => {
+			user.updateActivity();
+			state.voted = false;
+			state.votedValue = undefined;
+		});
+		this.votesRevealed = false;
 	}
 
 	public getState(): RoomState {
