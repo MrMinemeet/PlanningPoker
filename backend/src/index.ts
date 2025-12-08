@@ -9,7 +9,13 @@ import { User } from "./user.js";
 
 const logger = new Utils.Logger("[index.ts]");
 
+/**
+ * RoomId -> Room
+ */
 const activeRooms: Map<string, Room> = new Map();
+/**
+ * UserId -> User
+ */
 const activeUsers: Map<string, User> = new Map();
 
 setInterval(() => {
@@ -199,13 +205,20 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 		socket.on("disconnect", () => {
 			logger.info(`Websocket disconnected: ${socket.id}`);
+			const user = activeUsers.values().find(user => user.socketId === socket.id);
+			if (user == null) {
+				logger.warn(`Could not find user for disconnected socket: ${socket.id}`);
+				return;
+			}
 
-			// Remove users associated with this socket
-			activeUsers.values()
-				.filter(user => user.socketId === socket.id)
-				.forEach(user => {
-					activeRooms.forEach(room => room.removeUser(user));
-				});
+			// Drop User from room
+			for(const room of activeRooms.values()) {
+				if (room.removeUser(user)) {
+					logger.info(`User ${user.id} removed from room ${room.id} due to disconnection`);
+					emitRoomState(websocket, room.id);
+					break; // Assumption: A user can only be in one room at a time
+				}
+			}
 		});
 	});
 }

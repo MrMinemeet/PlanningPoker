@@ -78,7 +78,6 @@ export class Room {
 
 	public getVotingResults(): VotingResult[] {
 		this.votesRevealed = true;
-		this._lastActivityTime = new Date();
 		const results: VotingResult[] = [];
 		for (const [user, state] of this.users) {
 			if (state.voted && state.votedValue != null) {
@@ -88,11 +87,18 @@ export class Room {
 		return results;
 	}
 
-	public removeUser(user: User) {
+	/**
+	 * Removes a user from the room.
+	 * @param user The user to remove.
+	 * @returns True if the user was removed, otherwise false.
+	 */
+	public removeUser(user: User): boolean {
 		if (this.users.delete(user)) {
 			this._lastActivityTime = new Date();
 			console.debug(`User ${user.username} (${user.id}) removed from room ${this.id}`);
+			return true;
 		}
+		return false;
 	}
 
 	public resetVotes() {
