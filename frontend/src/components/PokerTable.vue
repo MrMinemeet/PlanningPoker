@@ -7,15 +7,29 @@ const props = defineProps({
   anyVotePresent: {
     type: Boolean,
     required: true
+  },
+  votesRevealed: {
+    type: Boolean,
+    required: true
   }
 });
+const emit = defineEmits(["reveal-cards", "reset-voting"]);
 
+function revealCards() {
+  emit("reveal-cards");
+}
+function resetVoting() {
+  emit("reset-voting");
+}
 </script>
 
 <template>
   <div class="poker-table">
-    <button v-if="anyVotePresent" class="reveal-cards-button">
+    <button v-if="anyVotePresent && !votesRevealed" @click="revealCards" class="reveal-cards-button">
       Reveal Cards
+    </button>
+    <button v-else-if="votesRevealed" @click="resetVoting" class="reset-voting-button">
+      Reset Voting
     </button>
     <p v-else>
       <p v-if="anyUserPresent" class="info-text">
@@ -44,5 +58,4 @@ const props = defineProps({
   color: white;
   font-weight: bold;
 }
-
 </style>

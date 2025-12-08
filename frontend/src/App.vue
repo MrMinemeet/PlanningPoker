@@ -11,8 +11,10 @@ import RoomChooser from './components/RoomChooser.vue';
 const roomId = ref<string | undefined>(undefined);
 
 export type UserState = {
+  id: string;
   username: string;
   voted: boolean;
+  vote: string | null;
 }
 export type RoomState = {
   users: Array<UserState>;
@@ -46,6 +48,35 @@ function setRoom(id: string) {
 }
 
 let socket: Socket | undefined = undefined;
+
+function castVote(value: string) {
+  if (socket != null && roomId.value.trim() !== "") {
+    console.debug(`Casting vote "${value}" in room "${roomId.value}"`);
+    socket.emit("sendVote", { roomId: roomId.value, userId: user.value?.sessionId, vote: value });
+  } else {
+    console.warn("Cannot cast vote: socket or roomId is undefined");
+  }
+}
+
+function revealCards() {
+  if (socket == null || roomId.value.trim() === "") {
+    return;
+  }
+  console.debug(`Revealing votes in room "${roomId.value}"`);
+  socket.emit("revealVotes", { roomId: roomId.value });
+}
+
+function resetVoting() {
+  if (socket == null 
+    || roomId.value.trim() === "" 
+    || roomState.value == null
+    || !roomState.value.votesRevealed) {
+    return;
+  }
+  console.debug(`Resetting votes in room "${roomId.value}"`);
+  socket.emit("resetVotes", { roomId: roomId.value });
+}
+
 watch(roomId, (newRoomId) => {
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
@@ -65,9 +96,27 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
+  socket.on("socketError", (errorMessage: { receivedEvent: string, message: string }) => {
+    console.error("Error from server:", JSON.stringify(errorMessage));
+  });
+
   socket.on("roomState", (state: RoomState) => {
     console.debug("Received room state:", state);
     roomState.value = state;
+  });
+
+  socket.on("votesRevealed", (results: Array<{ userId: string; vote: string }>) => {
+    console.debug("Votes have been revealed:", results);
+    if (roomState.value == null) {
+      console.error("Cannot reveal votes: roomState is null");
+      return;
+    }
+
+    const voteMap = new Map<string, string>(results.map(r => [r.userId, r.vote]));
+    roomState.value.users = roomState.value.users.map(user =>
+      ({ ...user, vote: voteMap.get(user.id) ?? null })
+    );
+    roomState.value.votesRevealed = true;
   });
 
   socket.on("disconnect", (reason: unknown) => {
@@ -82,7 +131,8 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   <main>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
-    <PokerRoom v-else :room-state="roomState" />
+    <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" @reset-voting="resetVoting"
+      :room-state="roomState" />
   </main>
 </template>
 

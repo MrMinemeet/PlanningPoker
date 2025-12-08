@@ -1,6 +1,6 @@
 import Fastify from "fastify";
 import cors from '@fastify/cors'
-import { Server as SocketIOServer } from "socket.io";
+import { Socket, Server as SocketIOServer } from "socket.io";
 
 import { Room } from "./room.js";
 import * as Constants from "./constants.js";
@@ -9,7 +9,13 @@ import { User } from "./user.js";
 
 const logger = new Utils.Logger("[index.ts]");
 
+/**
+ * RoomId -> Room
+ */
 const activeRooms: Map<string, Room> = new Map();
+/**
+ * UserId -> User
+ */
 const activeUsers: Map<string, User> = new Map();
 
 setInterval(() => {
@@ -67,6 +73,28 @@ async function main() {
 	}
 }
 
+function emitRoomState(socket: SocketIOServer, roomId: string) {
+	const room = activeRooms.get(roomId)
+	if (room == null) {
+		logger.warn(`Cannot emit room state for non-existing ${roomId}`);
+		return;
+	}
+
+	logger.info("Emitting room state:", roomId);
+	socket.in(roomId).emit("roomState", room.getState());
+}
+
+function emitVotes(socket: SocketIOServer, roomId: string) {
+	const room = activeRooms.get(roomId)
+	if (room == null) {
+		logger.warn(`Cannot emit votes for non-existing ${roomId}`);
+		return;
+	}
+
+	logger.info("Emitting votes for:", roomId);
+	socket.in(roomId).emit("votesRevealed", room.revealAndGetVotes());
+}
+
 
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
@@ -108,17 +136,46 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 	});
 }
 
+type SendVoteData = {
+	roomId: string;
+	userId: string;
+	vote: string;
+}
+
 // Websocket handling
 function registerWebsocketHandlers(websocket: SocketIOServer) {
 	websocket.on("connection", (socket) => {
 		logger.info(`New client websocket connection: ${socket.id}`);
 
+		socket.on("sendVote", (data: SendVoteData) => {
+			logger.info(`Received vote from '${data.userId}`);
+			try {
+				activeRooms.get(data.roomId)?.castVote(data.userId, data.vote);
+				emitRoomState(websocket, data.roomId);
+			} catch (e) {
+				logger.warn("Error casting vote:", (e as Error).message);
+				emitError(socket, "sendVote", (e as Error).message);
+			}
+		});
+
+		socket.on("resetVotes", (data: { roomId: string }) => {
+			logger.info("Received request to reset votes");
+			activeRooms.get(data.roomId)?.resetVotes();
+			emitRoomState(websocket, data.roomId);
+		});
+
+		socket.on("revealVotes", (data: { roomId: string }) => {
+			logger.info("Received request to reveal votes");
+			emitVotes(websocket, data.roomId);
+		});
+
 		socket.on("joinRoom", (data) => {
 			if (typeof (data) === "string") {
 				try {
 					data = JSON.parse(data);
-				} catch (e) {
-					logger.error(`Invalid JSON in joinRoom: ${data}`);
+				} catch (e: unknown) {
+					logger.warn("Invalid JSON in joinRoom:", e);
+					emitError(socket, "joinRoom", "Invalid JSON format");
 					return;
 				}
 			}
@@ -128,6 +185,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 			if (room == null || user == null) {
 				logger.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
+				emitError(socket, "joinRoom", "Invalid room ID or user ID");
 				return;
 			}
 
@@ -137,19 +195,31 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 			socket.join(roomId);
 
-			logger.info("Emitting room state to room:", roomId);
-			websocket.to(roomId).emit("roomState", room.getState());
+			emitRoomState(websocket, roomId);
 		});
 
 		socket.on("disconnect", () => {
 			logger.info(`Websocket disconnected: ${socket.id}`);
+			const user = Array.from(activeUsers.values())
+				.find(user => user.socketId === socket.id);
+			if (user == null) {
+				logger.warn(`Could not find user for disconnected socket: ${socket.id}`);
+				return;
+			}
 
-			// Remove users associated with this socket
-			activeUsers.values()
-				.filter(user => user.socketId === socket.id)
-				.forEach(user => {
-					activeRooms.forEach(room => room.removeUser(user));
-				});
+			// Drop User from room
+			for(const room of activeRooms.values()) {
+				if (room.removeUser(user)) {
+					logger.info(`User ${user.id} removed from room ${room.id} due to disconnection`);
+					emitRoomState(websocket, room.id);
+					break; // Assumption: A user can only be in one room at a time
+				}
+			}
 		});
 	});
+}
+
+function emitError(socket: Socket, receivedEvent: string, message: string) {
+	logger.info("Emitting error:", message);
+	socket.emit("socketError", { receivedEvent, message });
 }

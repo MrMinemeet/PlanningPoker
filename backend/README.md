@@ -25,16 +25,15 @@ These WebSocket events are available.
 * `sendVote` - Send vote to the room
   - Data: `{ roomId: string, userId: string, vote: string }`
 * `revealVotes` - Reveal all votes in the room
-  - Data: `{ roomId: string, userId: string }`
+  - Data: `{ roomId: string }`
 * `resetVotes` - Reset all votes in the room
-  - Data: `{ roomId: string, userId: string }`
+  - Data: `{ roomId: string }`
 
 **Server → Client**
 * `roomState` - Sends the current state of the room
-  - Data: `{ users: Array<{ userName: string, voted: boolean }>, votesRevealed: boolean, deck: string }`
-* `voteReceived` - Sends that a specific user voted, but not the vote itself
-  - Data: `{ userName: string }`
+  - Data: `{ users: Array<{ id: string, username: string, voted: boolean }>, votesRevealed: boolean, deck: string }`
 * `votesRevealed` - Sends all votes in the room when they are revealed
-  - Data: `{ votes: Array<{ userName: string, vote: string | null }> }`
-* `votesReset` - Notifies that all votes have been reset
-  - Data: `{}`
+  - Data: `{ votes: Array<{ userId: string, vote: string | null }> }`
+* `socketError` - Sends an error message
+  - Data: `{ receivedEvent: string, message: string }`
+  - This event is sent when an error occurs, such as trying to join a non-existent room.
