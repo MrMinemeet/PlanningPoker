@@ -22,6 +22,7 @@ export type RoomState = {
   deck: string;
 }
 const roomState = ref<RoomState | null>(null);
+const errorMessage = ref<string | null>(null);
 
 type User = {
   name: string;
@@ -96,8 +97,23 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
-  socket.on("socketError", (errorMessage: { receivedEvent: string, message: string }) => {
-    console.error("Error from server:", JSON.stringify(errorMessage));
+  socket.on("socketError", (error: { receivedEvent: string, message: string }) => {
+    console.error("Error from server:", JSON.stringify(error));
+
+    switch (error.receivedEvent) {
+      case "joinRoom":
+        errorMessage.value = "Failed to join room!";
+        roomId.value = undefined;
+        user.value = null;
+        const url = new URL(window.location.href);
+        url.searchParams.delete('room');
+        window.history.replaceState({}, '', url.toString());
+        break;
+
+      default:
+        errorMessage.value = error.message;
+        break;
+    }
   });
 
   socket.on("roomState", (state: RoomState) => {
@@ -129,6 +145,10 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
 
 <template>
   <main>
+    <div v-if="errorMessage != null" class="error-banner">
+      <span>{{ errorMessage }}</span>
+      <button @click="errorMessage = null">✕</button>
+    </div>
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
     <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" @reset-voting="resetVoting"
@@ -136,4 +156,25 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
   </main>
 </template>
 
-<style scoped></style>
+<style scoped>
+.error-banner {
+  background-color: #fee2e2;
+  border: 1px solid #ef4444;
+  color: #b91c1c;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner button {
+  background: transparent;
+  border: none;
+  color: #b91c1c;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 0.5rem;
+}
+</style>
