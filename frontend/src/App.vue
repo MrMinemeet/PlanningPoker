@@ -31,6 +31,17 @@ type User = {
 }
 const user = ref<User | null>(null);
 
+const storedSessionId = Cookies.get('sessionId');
+const storedUsername = localStorage.getItem('username');
+if (storedSessionId && storedUsername) {
+  console.log("Restoring session for user:", storedUsername);
+  user.value = {
+    name: storedUsername,
+    sessionId: storedSessionId,
+    ttl: 0
+  };
+}
+
 function setUser(createdUser: User) {
   // Store username more persistently
   localStorage.setItem('username', createdUser.name);
