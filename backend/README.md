@@ -31,11 +31,9 @@ These WebSocket events are available.
 
 **Server → Client**
 * `roomState` - Sends the current state of the room
-  - Data: `{ users: Array<{ userName: string, voted: boolean }>, votesRevealed: boolean, deck: string }`
+  - Data: `{ users: Array<{ id: string, username: string, voted: boolean }>, votesRevealed: boolean, deck: string }`
 * `votesRevealed` - Sends all votes in the room when they are revealed
-  - Data: `{ votes: Array<{ userName: string, vote: string | null }> }`
-* `votesReset` - Notifies that all votes have been reset
-  - Data: `{}`
-* `error` - Sends an error message
+  - Data: `{ votes: Array<{ userId: string, vote: string | null }> }`
+* `socketError` - Sends an error message
   - Data: `{ receivedEvent: string, message: string }`
   - This event is sent when an error occurs, such as trying to join a non-existent room.

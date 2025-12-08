@@ -50,7 +50,7 @@ function setRoom(id: string) {
 let socket: Socket | undefined = undefined;
 
 function castVote(value: string) {
-  if (socket != null && roomId.value !== "") {
+  if (socket != null && roomId.value.trim() !== "") {
     console.debug(`Casting vote "${value}" in room "${roomId.value}"`);
     socket.emit("sendVote", { roomId: roomId.value, userId: user.value?.sessionId, vote: value });
   } else {
@@ -59,7 +59,7 @@ function castVote(value: string) {
 }
 
 function revealCards() {
-  if (socket == null || roomId.value === "") {
+  if (socket == null || roomId.value.trim() === "") {
     return;
   }
   console.debug(`Revealing votes in room "${roomId.value}"`);
@@ -67,7 +67,10 @@ function revealCards() {
 }
 
 function resetVoting() {
-  if (socket == null || roomId.value === "" || !roomState.value.votesRevealed) {
+  if (socket == null 
+    || roomId.value.trim() === "" 
+    || roomState.value == null
+    || !roomState.value.votesRevealed) {
     return;
   }
   console.debug(`Resetting votes in room "${roomId.value}"`);
@@ -75,7 +78,6 @@ function resetVoting() {
 }
 
 watch(roomId, (newRoomId) => {
-
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
   }
@@ -94,7 +96,7 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
-  socket.on("error", (errorMessage: { receivedMessage: string, message: string }) => {
+  socket.on("socketError", (errorMessage: { receivedEvent: string, message: string }) => {
     console.error("Error from server:", JSON.stringify(errorMessage));
   });
 
@@ -104,7 +106,7 @@ watch(roomId, (newRoomId) => {
   });
 
   socket.on("votesRevealed", (results: Array<{ userId: string; vote: string }>) => {
-    console.info("Votes have been revealed:", results);
+    console.debug("Votes have been revealed:", results);
     if (roomState.value == null) {
       console.error("Cannot reveal votes: roomState is null");
       return;
@@ -112,7 +114,7 @@ watch(roomId, (newRoomId) => {
 
     const voteMap = new Map<string, string>(results.map(r => [r.userId, r.vote]));
     roomState.value.users = roomState.value.users.map(user =>
-      ({ ...user, vote: voteMap.get(user.id) || null })
+      ({ ...user, vote: voteMap.get(user.id) ?? null })
     );
     roomState.value.votesRevealed = true;
   });

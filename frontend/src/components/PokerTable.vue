@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import { ref } from "vue";
-
 const props = defineProps({
   anyUserPresent: {
     type: Boolean,
@@ -19,7 +17,6 @@ const emit = defineEmits(["reveal-cards", "reset-voting"]);
 
 function revealCards() {
   emit("reveal-cards");
-  
 }
 function resetVoting() {
   emit("reset-voting");

@@ -81,7 +81,7 @@ function emitRoomState(socket: SocketIOServer, roomId: string) {
 	}
 
 	logger.info("Emitting room state:", roomId);
-	socket.to(roomId).emit("roomState", room.getState());
+	socket.in(roomId).emit("roomState", room.getState());
 }
 
 function emitVotes(socket: SocketIOServer, roomId: string) {
@@ -92,7 +92,7 @@ function emitVotes(socket: SocketIOServer, roomId: string) {
 	}
 
 	logger.info("Emitting votes for:", roomId);
-	socket.to(roomId).emit("votesRevealed", room.getVotingResults());
+	socket.in(roomId).emit("votesRevealed", room.revealAndGetVotes());
 }
 
 
@@ -160,13 +160,8 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 		socket.on("resetVotes", (data: { roomId: string }) => {
 			logger.info("Received request to reset votes");
-			try {
-				activeRooms.get(data.roomId)?.resetVotes();
-				emitRoomState(websocket, data.roomId);
-			} catch (e) {
-				logger.warn("Error resetting votes:", (e as Error).message);
-				emitError(socket, "resetVotes", (e as Error).message);
-			}
+			activeRooms.get(data.roomId)?.resetVotes();
+			emitRoomState(websocket, data.roomId);
 		});
 
 		socket.on("revealVotes", (data: { roomId: string }) => {
@@ -205,7 +200,8 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 		socket.on("disconnect", () => {
 			logger.info(`Websocket disconnected: ${socket.id}`);
-			const user = activeUsers.values().find(user => user.socketId === socket.id);
+			const user = Array.from(activeUsers.values())
+				.find(user => user.socketId === socket.id);
 			if (user == null) {
 				logger.warn(`Could not find user for disconnected socket: ${socket.id}`);
 				return;
@@ -225,5 +221,5 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 function emitError(socket: Socket, receivedEvent: string, message: string) {
 	logger.info("Emitting error:", message);
-	socket.emit("error", { receivedEvent, message });
+	socket.emit("socketError", { receivedEvent, message });
 }

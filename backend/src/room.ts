@@ -68,6 +68,7 @@ export class Room {
 		}
 		entry[1].voted = true;
 		entry[1].votedValue = vote;
+		this._lastActivityTime = new Date();
 	}
 
 	public addUser(user: User) {
@@ -76,7 +77,7 @@ export class Room {
 		console.debug(`User ${user.username} (${user.id}) added to room ${this.id}`);
 	}
 
-	public getVotingResults(): VotingResult[] {
+	public revealAndGetVotes(): VotingResult[] {
 		this.votesRevealed = true;
 		const results: VotingResult[] = [];
 		for (const [user, state] of this.users) {
@@ -112,7 +113,6 @@ export class Room {
 	}
 
 	public getState(): RoomState {
-		this._lastActivityTime = new Date();
 		return {
 			users: Array.from(this.users)
 				.map(([user, userState]) => ({
