@@ -154,7 +154,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 				emitRoomState(websocket, data.roomId);
 			} catch (e) {
 				logger.warn("Error casting vote:", (e as Error).message);
-				emitError(socket, (e as Error).message);
+				emitError(socket, "sendVote", (e as Error).message);
 			}
 		});
 
@@ -165,7 +165,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 				emitRoomState(websocket, data.roomId);
 			} catch (e) {
 				logger.warn("Error resetting votes:", (e as Error).message);
-				emitError(socket, (e as Error).message);
+				emitError(socket, "resetVotes", (e as Error).message);
 			}
 		});
 
@@ -180,7 +180,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 					data = JSON.parse(data);
 				} catch (e: unknown) {
 					logger.warn("Invalid JSON in joinRoom:", e);
-					emitError(socket, "Invalid JSON format");
+					emitError(socket, "joinRoom", "Invalid JSON format");
 					return;
 				}
 			}
@@ -190,7 +190,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 
 			if (room == null || user == null) {
 				logger.warn(`Invalid room (${roomId}) or user (${userId}) in joinRoom`);
-				emitError(socket, "Invalid room ID or user ID");
+				emitError(socket, "joinRoom", "Invalid room ID or user ID");
 				return;
 			}
 
@@ -223,7 +223,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 	});
 }
 
-function emitError(socket: Socket, message: string) {
+function emitError(socket: Socket, receivedEvent: string, message: string) {
 	logger.info("Emitting error:", message);
-	socket.emit("error", { message });
+	socket.emit("error", { receivedEvent, message });
 }

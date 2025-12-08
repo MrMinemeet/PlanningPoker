@@ -94,8 +94,8 @@ watch(roomId, (newRoomId) => {
     socket?.emit("joinRoom", { roomId: newRoomId, userId: user.value?.sessionId });
   });
 
-  socket.on("error", (errorMessage: { message: string }) => {
-    console.error("Error from server:", errorMessage.message);
+  socket.on("error", (errorMessage: { receivedMessage: string, message: string }) => {
+    console.error("Error from server:", JSON.stringify(errorMessage));
   });
 
   socket.on("roomState", (state: RoomState) => {
