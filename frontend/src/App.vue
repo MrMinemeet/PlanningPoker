@@ -23,6 +23,7 @@ export type RoomState = {
 }
 const roomState = ref<RoomState | null>(null);
 const errorMessage = ref<string | null>(null);
+const votingResults = ref<Array<{ userId: string; vote: string }> | null>(null);
 
 type User = {
   name: string;
@@ -98,6 +99,12 @@ function closeSocket() {
   }
 }
 
+watch(roomState, (newState) => {
+  if (newState == null || !newState.votesRevealed) {
+    votingResults.value = null;
+  }
+});
+
 watch(roomId, (newRoomId) => {
   // Close any dangling socket connection
   closeSocket();
@@ -142,6 +149,7 @@ watch(roomId, (newRoomId) => {
 
   socket.on("votesRevealed", (results: Array<{ userId: string; vote: string }>) => {
     console.debug("Votes have been revealed:", results);
+    votingResults.value = results;
     if (roomState.value == null) {
       console.error("Cannot reveal votes: roomState is null");
       return;
@@ -176,7 +184,7 @@ roomId.value = new URL(window.location.href).searchParams.get('room') || undefin
     <UserNameInput v-if="user == null" @set-user="setUser" />
     <RoomChooser v-else-if="roomId == null" @set-room="setRoom" />
     <PokerRoom v-else @reveal-cards="revealCards" @cast-vote="castVote" @reset-voting="resetVoting"
-      :room-state="roomState" />
+      :room-state="roomState" :voting-results="votingResults" />
   </main>
 </template>
 

@@ -2,6 +2,7 @@
 import { computed, ComputedRef } from 'vue';
 import PokerTable from './PokerTable.vue';
 import PokerUser from './PokerUser.vue';
+import VotingResults from './VotingResults.vue';
 import { RoomState, UserState } from '@/App.vue';
 import FibonacciVoting from './FibonacciVoting.vue';
 
@@ -10,6 +11,10 @@ const emit = defineEmits(["cast-vote", "reveal-cards", "reset-voting"]);
 const props = defineProps({
 	roomState: {
 		type: Object as () => RoomState | null,
+		required: false
+	},
+	votingResults: {
+		type: Array as () => Array<{ userId: string; vote: string }> | null,
 		required: false
 	}
 });
@@ -87,6 +92,9 @@ function resetVoting() {
 			</div>
 			<div class="grid-item"></div>
 		</div>
+		<div v-if="props.votingResults && props.votingResults.length > 0" class="results-section">
+			<VotingResults :results="props.votingResults" />
+		</div>
 	</div>
 	<FibonacciVoting :enabled="!roomState?.votesRevealed" @cast-vote="castVote" />
 </template>
@@ -96,6 +104,7 @@ function resetVoting() {
 	display: flex;
 	justify-content: center;
 	align-items: center;
+	flex-direction: column;
 	width: 70%;
 	height: 80%;
 	margin: 0 auto;
