@@ -1,8 +1,8 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed, ComputedRef } from 'vue';
 import PokerTable from './PokerTable.vue';
 import PokerUser from './PokerUser.vue';
-import { RoomState } from '@/App.vue';
+import { RoomState, UserState } from '@/App.vue';
 import FibonacciVoting from './FibonacciVoting.vue';
 
 const emit = defineEmits(["cast-vote", "reveal-cards", "reset-voting"]);
@@ -13,6 +13,25 @@ const props = defineProps({
 		required: false
 	}
 });
+
+const positionedUserMap: ComputedRef<Map<"top" | "bottom" | "left" | "right", Array<UserState>>> = computed(() => {
+	const positionMap = new Map<"top" | "bottom" | "left" | "right", Array<UserState>>([
+		["top", []],
+		["bottom", []],
+		["left", []],
+		["right", []]
+	]);
+	if (!props.roomState) {
+		return positionMap;
+	}
+	
+	const positions = ["top", "bottom", "left", "right"] as const;
+	props.roomState.users.forEach((user, index) => {
+		positionMap.get(positions[index % 4]).push(user);
+	});
+	return positionMap;
+});
+
 
 const hasAnyUsers = computed(() => {
 	return props.roomState?.users.length > 0;
@@ -32,32 +51,42 @@ function revealCards() {
 function resetVoting() {
 	emit("reset-voting");
 }
-
-/**
- * Returns style object to position user around the table
- * @param index Index of the user
- * @param total Total number of users
- */
-function getPositionStyle(index: number, total: number): { [s: string]: string; } {
-	const angle = (360 / total) * index;
-	const radius = 250;
-	const x = Math.cos((angle * Math.PI) / 180) * radius;
-	const y = Math.sin((angle * Math.PI) / 180) * radius;
-
-	return {
-		position: 'absolute',
-		left: `calc(50% + ${x}px)`,
-		top: `calc(50% + ${y}px)`,
-		transform: 'translate(-50%, -50%)',
-	};
-}
 </script>
 
 <template>
 	<div class="poker-table-container">
-		<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes" :votes-revealed="roomState?.votesRevealed ?? false" @reveal-cards="revealCards" @reset-voting="resetVoting" />
-		<PokerUser v-for="(user, i) in roomState?.users" :key="i" :username="user.username" :voted="user.voted" :vote="user.vote"
-			:style="getPositionStyle(i, roomState?.users.length ?? 0)" />
+		<div class="poker-grid">
+			<!-- Row 1 -->
+			<div class="grid-item"></div>
+			<div id="players-top" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('top')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="grid-item"></div>
+
+			<!-- Row 2 -->
+			<div id="players-left" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('left')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="poker-table-center">
+				<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes"
+					:votes-revealed="roomState?.votesRevealed ?? false" @reveal-cards="revealCards"
+					@reset-voting="resetVoting" />
+			</div>
+			<div id="players-right" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('right')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+
+			<!-- Row 3 -->
+			<div class="grid-item"></div>
+			<div id="players-bottom" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('bottom')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="grid-item"></div>
+		</div>
 	</div>
 	<FibonacciVoting :enabled="!roomState?.votesRevealed" @cast-vote="castVote" />
 </template>
@@ -67,17 +96,40 @@ function getPositionStyle(index: number, total: number): { [s: string]: string; 
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	width: 600px;
-	height: 600px;
+	width: 70%;
+	height: 80%;
 	margin: 0 auto;
-	position: relative;
 }
 
-.players {
-	position: absolute;
+.poker-grid {
+	display: grid;
+	grid-template-columns: 1fr 2fr 1fr;
+	grid-template-rows: 1fr 2fr 1fr;
 	width: 100%;
 	height: 100%;
-	top: 0;
-	left: 0;
+	gap: 0.1rem;
+}
+
+.poker-table-center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.player-container {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: 0.1rem
+}
+
+#players-top,
+#players-bottom {
+	flex-direction: row;
+}
+
+#players-left,
+#players-right {
+	flex-direction: column;
 }
 </style>
