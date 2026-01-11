@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { ref, watch } from 'vue';
+import { ref, watch, onUnmounted } from 'vue';
 import Cookies from 'js-cookie';
 import { io, Socket } from 'socket.io-client';
 
@@ -79,7 +79,7 @@ function revealCards() {
 }
 
 function resetVoting() {
-  if (socket == null 
+  if (socket == null
     || roomId.value.trim() === "" 
     || roomState.value == null
     || !roomState.value.votesRevealed) {
@@ -89,15 +89,23 @@ function resetVoting() {
   socket.emit("resetVotes", { roomId: roomId.value });
 }
 
+function closeSocket() {
+  if (socket != null) {
+    console.log("Closing socket connection");
+    socket.off(); // Remove listeners
+    socket.disconnect();
+    socket = undefined;
+  }
+}
+
 watch(roomId, (newRoomId) => {
+  // Close any dangling socket connection
+  closeSocket();
+
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
   }
 
-  if (socket) {
-    console.log("Disconnecting existing socket");
-    socket.disconnect();
-  }
   socket = io(`${constants.BASE_URL}`, {
     transports: ["websocket"],
     withCredentials: true
@@ -150,6 +158,11 @@ watch(roomId, (newRoomId) => {
     console.info(`Disconnected from server: ${reason}`);
   });
 })
+
+// Cleanup when component unmounts (e.g. reload, navigate away)
+onUnmounted(() => {
+  closeSocket();
+});
 
 roomId.value = new URL(window.location.href).searchParams.get('room') || undefined;
 </script>
