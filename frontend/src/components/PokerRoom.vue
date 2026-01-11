@@ -22,7 +22,6 @@ const positionedUserMap: ComputedRef<Map<"top" | "bottom" | "left" | "right", Ar
 		["right", []]
 	]);
 	if (!props.roomState) {
-		console.warn("No room state available for positioning users.");
 		return positionMap;
 	}
 	
@@ -56,85 +55,81 @@ function resetVoting() {
 
 <template>
 	<div class="poker-table-container">
-		<table>
-			<tr>
-				<td></td>
-				<td id="players-top" class="player-container">
-					<PokerUser v-for="user in positionedUserMap.get('top')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" />
-				</td>
-				<td></td>
-			</tr>
-			<tr>
-				<td id="players-left" class="player-container">
-					<PokerUser v-for="user in positionedUserMap.get('left')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote"  />
-				</td>
-				<td>
-					<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes"
-						:votes-revealed="roomState?.votesRevealed ?? false" @reveal-cards="revealCards"
-						@reset-voting="resetVoting" />
-				</td>
-				<td id="players-right" class="player-container">
-					<PokerUser v-for="user in positionedUserMap.get('right')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" />
-				</td>
-			</tr>
-			<tr>
-				<td></td>
-				<td id="players-bottom" class="player-container">
-					<PokerUser v-for="user in positionedUserMap.get('bottom')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" />
-				</td>
-				<td></td>
-			</tr>
-		</table>
+		<div class="poker-grid">
+			<!-- Row 1 -->
+			<div class="grid-item"></div>
+			<div id="players-top" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('top')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="grid-item"></div>
+
+			<!-- Row 2 -->
+			<div id="players-left" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('left')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="poker-table-center">
+				<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes"
+					:votes-revealed="roomState?.votesRevealed ?? false" @reveal-cards="revealCards"
+					@reset-voting="resetVoting" />
+			</div>
+			<div id="players-right" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('right')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+
+			<!-- Row 3 -->
+			<div class="grid-item"></div>
+			<div id="players-bottom" class="player-container">
+				<PokerUser v-for="user in positionedUserMap.get('bottom')" :key="user.id" :username="user.username"
+					:voted="user.voted" :vote="user.vote" />
+			</div>
+			<div class="grid-item"></div>
+		</div>
 	</div>
 	<FibonacciVoting :enabled="!roomState?.votesRevealed" @cast-vote="castVote" />
 </template>
 
 <style scoped>
-.player-container {
-	width: 200px;
-	height: 200px;
-	text-align: center;
-}
-
-#players-top,
-#players-bottom {
-	display: flex;
-	justify-content: space-evenly;
-	align-items: center;
-	gap: 10px;
-	flex-direction: row;
-	width: 100%;
-}
-
-#players-left,
-#players-right {
-	display: flex;
-	justify-content: space-evenly;
-	align-items: center;
-	gap: 10px;
-	flex-direction: column;
-	height: 100%;
-}
-
 .poker-table-container {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	width: 600px;
-	height: 600px;
+	width: 70%;
+	height: 80%;
 	margin: 0 auto;
-	position: relative;
 }
 
-.players {
-	position: absolute;
+.poker-grid {
+	display: grid;
+	grid-template-columns: 1fr 2fr 1fr;
+	grid-template-rows: 1fr 2fr 1fr;
 	width: 100%;
 	height: 100%;
-	top: 0;
-	left: 0;
+	gap: 0.1rem;
+}
+
+.poker-table-center {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+.player-container {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: 0.1rem
+}
+
+#players-top,
+#players-bottom {
+	flex-direction: row;
+}
+
+#players-left,
+#players-right {
+	flex-direction: column;
 }
 </style>
