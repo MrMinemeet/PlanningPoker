@@ -115,6 +115,26 @@ function resetVoting() {
 	text-align: center;
 }
 
+#players-top,
+#players-bottom {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: 10px;
+	flex-direction: row;
+	width: 100%;
+}
+
+#players-left,
+#players-right {
+	display: flex;
+	justify-content: space-evenly;
+	align-items: center;
+	gap: 10px;
+	flex-direction: column;
+	height: 100%;
+}
+
 .poker-table-container {
 	display: flex;
 	justify-content: center;
