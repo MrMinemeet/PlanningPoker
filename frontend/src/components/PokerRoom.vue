@@ -25,25 +25,10 @@ const positionedUserMap: ComputedRef<Map<"top" | "bottom" | "left" | "right", Ar
 		console.warn("No room state available for positioning users.");
 		return positionMap;
 	}
-	const users = props.roomState.users;
-	users.forEach((user, index) => {
-		const positionIndex = index % 4;
-		let position: "top" | "bottom" | "left" | "right";
-		switch (positionIndex) {
-			case 0:
-				position = "top";
-				break;
-			case 1:
-				position = "bottom";
-				break;
-			case 2:
-				position = "left";
-				break;
-			case 3:
-				position = "right";
-				break;
-		}
-		positionMap.get(position)?.push(user);
+	
+	const positions = ["top", "bottom", "left", "right"] as const;
+	props.roomState.users.forEach((user, index) => {
+		positionMap.get(positions[index % 4]).push(user);
 	});
 	return positionMap;
 });
@@ -76,14 +61,14 @@ function resetVoting() {
 				<td></td>
 				<td id="players-top" class="player-container">
 					<PokerUser v-for="user in positionedUserMap.get('top')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" :votes-revealed="roomState?.votesRevealed ?? false" />
+						:voted="user.voted" :vote="user.vote" />
 				</td>
 				<td></td>
 			</tr>
 			<tr>
 				<td id="players-left" class="player-container">
 					<PokerUser v-for="user in positionedUserMap.get('left')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" :votes-revealed="roomState?.votesRevealed ?? false" />
+						:voted="user.voted" :vote="user.vote"  />
 				</td>
 				<td>
 					<PokerTable :any-user-present="hasAnyUsers" :any-vote-present="hasAnyVotes"
@@ -92,14 +77,14 @@ function resetVoting() {
 				</td>
 				<td id="players-right" class="player-container">
 					<PokerUser v-for="user in positionedUserMap.get('right')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" :votes-revealed="roomState?.votesRevealed ?? false" />
+						:voted="user.voted" :vote="user.vote" />
 				</td>
 			</tr>
 			<tr>
 				<td></td>
 				<td id="players-bottom" class="player-container">
 					<PokerUser v-for="user in positionedUserMap.get('bottom')" :key="user.id" :username="user.username"
-						:voted="user.voted" :vote="user.vote" :votes-revealed="roomState?.votesRevealed ?? false" />
+						:voted="user.voted" :vote="user.vote" />
 				</td>
 				<td></td>
 			</tr>
