@@ -1,5 +1,8 @@
 import Fastify from "fastify";
 import cors from '@fastify/cors'
+import staticFiles from '@fastify/static'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { Socket, Server as SocketIOServer } from "socket.io";
 
 import { Room } from "./room.js";
@@ -53,6 +56,17 @@ main();
 async function main() {
 	const fastify = Fastify({ logger: true });
 	await fastify.register(cors, {});
+	
+	// Get directory path for ES modules
+	const __filename = fileURLToPath(import.meta.url);
+	const __dirname = path.dirname(__filename);
+	
+	// Serve static files from the public directory
+	await fastify.register(staticFiles, {
+		root: path.join(__dirname, '../public'),
+		prefix: '/'
+	});
+	
 	const websocket = new SocketIOServer(fastify.server, {
 		cors: {
 			origin: '*',
@@ -65,8 +79,8 @@ async function main() {
 	registerWebsocketHandlers(websocket);
 
 	try {
-		await fastify.listen({ port: 3000 })
-		fastify.log.info("Server listening on http://localhost:3000");
+		await fastify.listen({ port: 3000, host: '0.0.0.0' })
+		fastify.log.info("Server listening on http://0.0.0.0:3000");
 	} catch (err) {
 		fastify.log.error(err)
 		process.exit(1)
