@@ -1,4 +1,4 @@
-import Fastify from "fastify";
+import Fastify, { type FastifyInstance } from "fastify";
 import cors from '@fastify/cors'
 import staticFiles from '@fastify/static'
 import path from 'path'
@@ -58,17 +58,24 @@ main();
 async function main() {
 	const fastify = Fastify({ logger: true });
 	await fastify.register(cors, {});
-	
+
+	process.on("SIGTERM", () => {
+		shutdown(fastify, "SIGTERM");
+	});
+	process.on("SIGINT", () => {
+		shutdown(fastify, "SIGINT");
+	});
+
 	// Get directory path for ES modules
 	const __filename = fileURLToPath(import.meta.url);
 	const __dirname = path.dirname(__filename);
-	
+
 	// Serve static files from the public directory
 	await fastify.register(staticFiles, {
 		root: path.join(__dirname, '../public'),
 		prefix: '/'
 	});
-	
+
 	const websocket = new SocketIOServer(fastify.server, {
 		cors: {
 			origin: '*',
@@ -234,7 +241,7 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 			}
 
 			// Drop User from room
-			for(const room of activeRooms.values()) {
+			for (const room of activeRooms.values()) {
 				if (room.removeUser(user)) {
 					logger.info(`User ${user.id} removed from room ${room.id} due to disconnection`);
 					emitRoomState(websocket, room.id);
@@ -248,4 +255,15 @@ function registerWebsocketHandlers(websocket: SocketIOServer) {
 function emitError(socket: Socket, receivedEvent: string, message: string) {
 	logger.info("Emitting error:", message);
 	socket.emit("socketError", { receivedEvent, message });
+}
+
+function shutdown(fastify: FastifyInstance, event: string) {
+	logger.info(`Received ${event}, shutting down server...`);
+	fastify.close().then(() => {
+		logger.info("Server shut down gracefully.");
+		process.exit(0);
+	}).catch((err: unknown) => {
+		logger.error("Error during server shutdown:", err);
+		process.exit(1);
+	});
 }
