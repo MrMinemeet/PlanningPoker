@@ -12,6 +12,8 @@ import { User } from "./user.js";
 
 const logger = new Utils.Logger("[index.ts]");
 
+const HTTP_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
 /**
  * RoomId -> Room
  */
@@ -79,8 +81,8 @@ async function main() {
 	registerWebsocketHandlers(websocket);
 
 	try {
-		await fastify.listen({ port: 3000, host: '0.0.0.0' })
-		fastify.log.info("Server listening on http://0.0.0.0:3000");
+		await fastify.listen({ port: HTTP_PORT, host: '0.0.0.0' })
+		fastify.log.info(`Server listening on htt://0.0.0.0:${HTTP_PORT}`);
 	} catch (err) {
 		fastify.log.error(err)
 		process.exit(1)
@@ -147,6 +149,16 @@ function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
 		logger.info(`Created new room: ${room.id} (Deck: ${request.query.deck})`);
 
 		return { roomId: room.id };
+	});
+
+	instance.get("/api/health", async (request, reply) => {
+		return {
+			status: "ok",
+			timestamp: new Date().toISOString(),
+			uptime: process.uptime(),
+			activeRooms: activeRooms.size,
+			activeUsers: activeUsers.size
+		};
 	});
 }
 
