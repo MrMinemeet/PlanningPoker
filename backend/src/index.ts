@@ -66,16 +66,6 @@ async function main() {
 		shutdown(fastify, "SIGINT");
 	});
 
-	// Get directory path for ES modules
-	const __filename = fileURLToPath(import.meta.url);
-	const __dirname = path.dirname(__filename);
-
-	// Serve static files from the public directory
-	await fastify.register(staticFiles, {
-		root: path.join(__dirname, '../public'),
-		prefix: '/'
-	});
-
 	const websocket = new SocketIOServer(fastify.server, {
 		cors: {
 			origin: '*',
@@ -121,6 +111,19 @@ function emitVotes(socket: SocketIOServer, roomId: string) {
 
 // Fastify routes
 function registerFastifyRoutes(instance: Fastify.FastifyInstance) {
+	// Serve static files from the public directory in production
+	// Built frontend files should be placed there by Dockerfile
+	if (process.env.NODE_ENV === 'production') {
+		logger.info("Running in production mode");
+		
+		// Serve static files at root for nginx-proxied requests
+		instance.register(staticFiles, {
+			root: path.join(path.dirname(fileURLToPath(import.meta.url)), '../public'),
+			prefix: '/',
+			decorateReply: false
+		});
+	}
+
 	instance.get("/api/create-user", async (request, reply) => {
 		if (request.query == null
 			|| typeof (request.query) !== "object"

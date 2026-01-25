@@ -105,8 +105,13 @@ watch(roomId, (newRoomId) => {
   if (newRoomId == null || newRoomId.trim() === "") {
     return;
   }
-
-  socket = io(`${constants.BASE_URL}`, {
+  
+  // Extract the origin and path from BASE_URL
+  const baseUrl = new URL(constants.BASE_URL);
+  const socketPath = baseUrl.pathname === '/' ? '/socket.io/' : `${baseUrl.pathname}/socket.io/`;
+  console.debug(`Connecting to socket at ${baseUrl.origin} with path ${socketPath}`);
+  socket = io(baseUrl.origin, {
+    path: socketPath,
     transports: ["websocket"],
     withCredentials: true
   });
